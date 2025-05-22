@@ -106,11 +106,11 @@ func (s *UserService) GetVerificationCode(e domain.User) (int, error) {
 
 	user, err = s.Repo.FindUserbyID(e.ID)
 	if err != nil {
-		return 0,err
+		return 0, err
 	}
 	//Send SMS
 	notificationClient := notification.NewNotificationClient(s.Config)
-	notificationClient.SendSMS(user.Phone, strconv.Itoa(code))
+	notificationClient.SendVoiceCall(user.Phone, strconv.Itoa(code))
 
 	//return verification code
 
@@ -123,7 +123,6 @@ func (s *UserService) VerifyCode(id uint, code int) error {
 	}
 
 	user, err := s.Repo.FindUserbyID(id)
-
 	if err != nil {
 		return errors.New("user not found")
 	}
@@ -137,7 +136,6 @@ func (s *UserService) VerifyCode(id uint, code int) error {
 	}
 
 	_, err = s.Repo.UpdateUser(user.ID, updateUser)
-
 	if err != nil {
 		return errors.New("verifiying code failed")
 	}
@@ -160,9 +158,41 @@ func (s *UserService) UpdateProfile(id uint, input any) error {
 	return nil
 }
 
-func (s *UserService) BecomeSeller(id uint, input any) (string, error) {
+func (s *UserService) BecomeSeller(id uint, input dto.SellerInput) (string, error) {
+	//find exisiting user
+	user, _ := s.Repo.FindUserbyID(id)
 
-	return "", nil
+	//return already joined seller program
+	if user.UserType == domain.SELLER {
+		return "", errors.New("user is already upgraded as seller")
+	}
+
+	//update user
+	seller, err := s.Repo.UpdateUser(id, domain.User{
+		FirstName: input.FirstName,
+		LastName:  input.LastName,
+		Phone:     input.PhoneNumber,
+		UserType:  domain.SELLER,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	//generating token
+	token, err := s.Auth.GenerateToken(user.ID, user.Email, seller.UserType)
+	if err != nil {
+		return "", fmt.Errorf("seller token generation failed %s", err)
+	}
+
+	//create bank account information
+	err = s.Repo.AddBankAccount(domain.BankAccount{
+		BankAccount: input.BankAccountNumber,
+		SwiftCode:   input.SwiftCode,
+		PaymentType: input.PaymentType,
+		UserId:      id,
+	})
+
+	return token, err
 }
 
 func (s *UserService) FindCart(id uint) ([]interface{}, error) {

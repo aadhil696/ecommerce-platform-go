@@ -14,10 +14,16 @@ type UserRepository interface {
 	FindUser(email string) (domain.User, error)
 	FindUserbyID(id uint) (domain.User, error)
 	UpdateUser(id uint, usr domain.User) (domain.User, error)
+	AddBankAccount(e domain.BankAccount) error
 }
 
 type userRepository struct {
 	db *gorm.DB
+}
+
+// Addind bank account for seller feature
+func (r *userRepository) AddBankAccount(e domain.BankAccount) error {
+	return r.db.Create(&e).Error
 }
 
 func NewUserRepository(db *gorm.DB) UserRepository {
@@ -99,7 +105,7 @@ func (r *userRepository) UpdateUser(id uint, usr domain.User) (domain.User, erro
 
 	//Verify the update was successfull
 	if result.RowsAffected == 0 {
-		return domain.User{}, fmt.Errorf("No user was updated")
+		return domain.User{}, fmt.Errorf("no user was updated")
 	}
 
 	//Retrieve and return the updated user

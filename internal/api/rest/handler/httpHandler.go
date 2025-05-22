@@ -13,4 +13,5 @@ type RestHandler struct {
 	DB   *gorm.DB
 	Auth helper.Auth
 	Config configs.AppConfig
+	
 }

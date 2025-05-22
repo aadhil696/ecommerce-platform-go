@@ -19,8 +19,8 @@ func SetupUserRoutes(rh *RestHandler) {
 	app := rh.App
 
 	svc := service.UserService{
-		Repo: repository.NewUserRepository(rh.DB),
-		Auth: rh.Auth,
+		Repo:   repository.NewUserRepository(rh.DB),
+		Auth:   rh.Auth,
 		Config: rh.Config,
 	}
 
@@ -37,6 +37,7 @@ func SetupUserRoutes(rh *RestHandler) {
 	//Private endpoints
 	pvtRoutes.Post("/verify", userHandler.Verify)
 	pvtRoutes.Post("/verifycode", userHandler.GetVerificationCode)
+	
 	pvtRoutes.Post("/profile", userHandler.CreateProfile)
 	pvtRoutes.Get("/profile", userHandler.GetProfile)
 
@@ -173,7 +174,26 @@ func (h *UserHandler) GetOrder(ctx *fiber.Ctx) error {
 }
 
 func (h *UserHandler) BecomeSeller(ctx *fiber.Ctx) error {
+
+	user := h.svc.Auth.GetCurrentUser(ctx)
+
+	req := dto.SellerInput{}
+	err := ctx.BodyParser(&req)
+	if err != nil {
+		return ctx.Status(http.StatusBadRequest).JSON(&fiber.Map{
+			"message": "Invalid request parameters",
+		})
+	}
+
+	token, err := h.svc.BecomeSeller(user.ID, req)
+	if err != nil {
+		return ctx.Status(http.StatusUnauthorized).JSON(&fiber.Map{
+			"message": "failed to upgrade as seller",
+		})
+	}
+
 	return ctx.Status(http.StatusOK).JSON(&fiber.Map{
-		"message": "seller mode",
+		"message": "seller mode accomplished",
+		"token":   token,
 	})
 }

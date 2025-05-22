@@ -13,3 +13,12 @@ type UserSignUp struct {
 type UserVerifyCode struct {
 	Code int `json:"code"`
 }
+
+type SellerInput struct {
+	FirstName         string `json:"firstname"`
+	LastName          string `json:"lastname"`
+	PhoneNumber       string `json:"phoneno"`
+	BankAccountNumber uint   `json:"bankaccountno"`
+	SwiftCode         string `json:"swiftcode"`
+	PaymentType       string `json:"paymenttype"`
+}
