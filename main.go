@@ -16,5 +16,3 @@ func main() {
 
 	api.StartServer(cfg)
 }
-
-//testing
