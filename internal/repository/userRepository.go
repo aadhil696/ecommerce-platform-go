@@ -33,18 +33,13 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 }
 func (r *userRepository) CreateUser(usr domain.User) (domain.User, error) {
 
-	user := domain.User{
-		Email:    usr.Email,
-		Password: usr.Password,
-		Phone:    usr.Phone,
-	}
-	result := r.db.Create(&user)
+	result := r.db.Create(&usr) // Just use the input directly
 	if result.Error != nil {
 		log.Println("User creation failed due to", result.Error)
 		return domain.User{}, result.Error
 	}
-
-	return user, nil
+	
+	return usr, nil
 }
 
 func (r *userRepository) FindUser(email string) (domain.User, error) {
