@@ -23,7 +23,7 @@ func StartServer(config configs.AppConfig) {
 	log.Println("Database connected successfully")
 
 	//Run AutoMigration
-	err = db.AutoMigrate(&domain.User{}, &domain.BankAccount{})
+	err = db.AutoMigrate(&domain.User{}, &domain.BankAccount{}, &domain.Category{})
 	if err != nil {
 		log.Fatalf("Migration failed due to %s", err)
 	}

@@ -2,9 +2,9 @@ package rest
 
 import (
 	"go-ecommerce-app/internal/api/rest"
+	"go-ecommerce-app/internal/dto"
 	"go-ecommerce-app/internal/repository"
 	"go-ecommerce-app/internal/service"
-	"log"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -54,18 +54,36 @@ func SetupCatalogRoutes(rh *RestHandler) {
 }
 
 func (h *CatalogHandler) CreateCategories(ctx *fiber.Ctx) error {
+	req := dto.CreateCategoryRequest{}
 
-	user := h.svc.Auth.GetCurrentUser(ctx)
-	log.Println(user)
+	if err := ctx.BodyParser(&req); err != nil {
+		return rest.BadRequestError(ctx, "create category invalid request")
+	}
 
-	return rest.SuccessResponse(ctx, "create catalog endpoint", nil)
+	if err := h.svc.CreateCategories(&req); err != nil {
+		return rest.InternalError(ctx, err)
+	}
+
+	return rest.SuccessResponse(ctx, "PRoduct category successfully completed", nil)
 }
 
 func (h *CatalogHandler) UpdateCategories(ctx *fiber.Ctx) error {
-	return rest.SuccessResponse(ctx, "update catalog endpoint", nil)
+	req := dto.CreateCategoryRequest{}
+
+	if err := ctx.BodyParser(&req); err != nil {
+		return rest.BadRequestError(ctx, "invalid request for updating categories")
+	}
+
+	if err := h.svc.UpdateCategories(&req); err != nil {
+		return rest.InternalError(ctx, err)
+	}
+
+	return rest.SuccessResponse(ctx, "Category updation successfully completed", nil)
 }
 
 func (h *CatalogHandler) DeleteCategories(ctx *fiber.Ctx) error {
+
+	
 	return rest.SuccessResponse(ctx, "delete catalog ", nil)
 }
 
