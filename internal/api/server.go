@@ -23,7 +23,7 @@ func StartServer(config configs.AppConfig) {
 	log.Println("Database connected successfully")
 
 	//Run AutoMigration
-	err = db.AutoMigrate(&domain.User{}, &domain.BankAccount{}, &domain.Category{})
+	err = db.AutoMigrate(&domain.User{}, &domain.BankAccount{}, &domain.Category{}, &domain.Product{})
 	if err != nil {
 		log.Fatalf("Migration failed due to %s", err)
 	}
@@ -51,5 +51,6 @@ func SetupRoutes(rh *rest.RestHandler) {
 	rest.SetupUserRoutes(rh)
 	//transactions
 	//catalog
+	rest.SetupCatalogRoutes(rh)
 
 }

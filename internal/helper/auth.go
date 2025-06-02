@@ -94,7 +94,7 @@ func (a Auth) VerifyToken(t string) (domain.User, error) {
 	})
 
 	if err != nil {
-		return domain.User{}, errors.New("invalid signing method")
+		return domain.User{}, fmt.Errorf("signing method error - %v", err)
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
@@ -125,7 +125,7 @@ func (a Auth) Authorize(ctx *fiber.Ctx) error {
 	} else {
 		return ctx.Status(401).JSON(&fiber.Map{
 			"message": "authorization failed",
-			"reason":  err,
+			"reason":  err.Error(),
 		})
 	}
 }
@@ -147,7 +147,7 @@ func (a Auth) AuthorizeSeller(ctx *fiber.Ctx) error {
 	if err != nil {
 		return ctx.Status(401).JSON(&fiber.Map{
 			"message": "authorization failed",
-			"reason":  err,
+			"reason":  err.Error(),
 		})
 	} else if user.ID > 0 && user.UserType == domain.SELLER {
 		ctx.Locals("user", user)

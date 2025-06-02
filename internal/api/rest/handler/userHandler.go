@@ -37,7 +37,7 @@ func SetupUserRoutes(rh *RestHandler) {
 	//Private endpoints
 	pvtRoutes.Post("/verify", userHandler.Verify)
 	pvtRoutes.Post("/verifycode", userHandler.GetVerificationCode)
-	
+
 	pvtRoutes.Post("/profile", userHandler.CreateProfile)
 	pvtRoutes.Get("/profile", userHandler.GetProfile)
 
@@ -63,6 +63,7 @@ func (h UserHandler) Register(ctx *fiber.Ctx) error {
 	if err != nil {
 		return ctx.Status(http.StatusInternalServerError).JSON(&fiber.Map{
 			"message": "Internal error on signup",
+			"error":   err.Error(),
 		})
 	}
 	return ctx.Status(http.StatusOK).JSON(&fiber.Map{
@@ -123,7 +124,8 @@ func (h *UserHandler) GetVerificationCode(ctx *fiber.Ctx) error {
 	code, err := h.svc.GetVerificationCode(user)
 	if err != nil {
 		return ctx.Status(http.StatusInternalServerError).JSON(&fiber.Map{
-			"message": err.Error(),
+			"message": "code generating failed",
+			"error":   err.Error(),
 		})
 	}
 
@@ -189,6 +191,7 @@ func (h *UserHandler) BecomeSeller(ctx *fiber.Ctx) error {
 	if err != nil {
 		return ctx.Status(http.StatusUnauthorized).JSON(&fiber.Map{
 			"message": "failed to upgrade as seller",
+			"error":   err.Error(),
 		})
 	}
 

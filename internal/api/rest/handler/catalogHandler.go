@@ -5,6 +5,8 @@ import (
 	"go-ecommerce-app/internal/dto"
 	"go-ecommerce-app/internal/repository"
 	"go-ecommerce-app/internal/service"
+	"net/http"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -29,10 +31,10 @@ func SetupCatalogRoutes(rh *RestHandler) {
 
 	//public
 	//listing products and categories
-	app.Get("/products")
-	app.Get("products/:id")
-	app.Get("/categories")
-	app.Get("/categories/:id")
+	app.Get("/products", catalogHandler.GetAProduct)
+	app.Get("/products/:id", catalogHandler.GetAllProducts)
+	app.Get("/categories", catalogHandler.GetAllCategories)
+	app.Get("/categories/:id", catalogHandler.GetACategory)
 
 	//private
 	//manage products and categories
@@ -48,9 +50,34 @@ func SetupCatalogRoutes(rh *RestHandler) {
 	selRoutes.Get("/products", catalogHandler.GetAllProducts)
 	selRoutes.Get("/products/:id", catalogHandler.GetAProduct)
 	selRoutes.Patch("/products/:id", catalogHandler.EditProduct)
-	selRoutes.Put("/product/:id", catalogHandler.StockUpdate) //update stock
+	selRoutes.Put("/products/:id", catalogHandler.StockUpdate) //update stock
 	selRoutes.Delete("/products/:id", catalogHandler.DeleteProduct)
 
+}
+
+func (h *CatalogHandler) GetAllCategories(ctx *fiber.Ctx) error {
+
+	allcat, err := h.svc.GetCategories()
+	if err != nil {
+		return rest.ErrorMessage(ctx, http.StatusInternalServerError, err)
+	}
+
+	return rest.SuccessResponse(ctx, "All Category list-", allcat)
+}
+
+func (h *CatalogHandler) GetACategory(ctx *fiber.Ctx) error {
+	//Extract id from URL
+	id, err := strconv.Atoi(ctx.Params("id"))
+	if err != nil {
+		return rest.BadRequestError(ctx, "Invalid id parameter")
+	}
+
+	cat, err := h.svc.GetCategoryById(id)
+	if err != nil {
+		return rest.ErrorMessage(ctx, http.StatusInternalServerError, err)
+	}
+
+	return rest.SuccessResponse(ctx, "Category for provided id", cat)
 }
 
 func (h *CatalogHandler) CreateCategories(ctx *fiber.Ctx) error {
@@ -60,31 +87,47 @@ func (h *CatalogHandler) CreateCategories(ctx *fiber.Ctx) error {
 		return rest.BadRequestError(ctx, "create category invalid request")
 	}
 
-	if err := h.svc.CreateCategories(&req); err != nil {
+	cat, err := h.svc.CreateCategories(&req)
+	if err != nil {
 		return rest.InternalError(ctx, err)
 	}
 
-	return rest.SuccessResponse(ctx, "PRoduct category successfully completed", nil)
+	return rest.SuccessResponse(ctx, "Product category creation successfully completed", cat)
 }
 
 func (h *CatalogHandler) UpdateCategories(ctx *fiber.Ctx) error {
-	req := dto.CreateCategoryRequest{}
+	//Extract id from URL
+	id, err := strconv.Atoi(ctx.Params("id"))
+	if err != nil {
+		return rest.BadRequestError(ctx, "Invalid id parameter")
+	}
 
+	//Parse the body
+	req := dto.CreateCategoryRequest{}
 	if err := ctx.BodyParser(&req); err != nil {
 		return rest.BadRequestError(ctx, "invalid request for updating categories")
 	}
 
-	if err := h.svc.UpdateCategories(&req); err != nil {
+	updatedCat, err := h.svc.UpdateCategories(id, &req)
+	if err != nil {
 		return rest.InternalError(ctx, err)
 	}
 
-	return rest.SuccessResponse(ctx, "Category updation successfully completed", nil)
+	return rest.SuccessResponse(ctx, "Category updation successfully completed", updatedCat)
 }
 
 func (h *CatalogHandler) DeleteCategories(ctx *fiber.Ctx) error {
+	//Extract id from URL
+	id, err := strconv.Atoi(ctx.Params("id"))
+	if err != nil {
+		return rest.BadRequestError(ctx, "Invalid id parameter")
+	}
 
-	
-	return rest.SuccessResponse(ctx, "delete catalog ", nil)
+	if err := h.svc.DeleteCategories(id); err != nil {
+		return rest.InternalError(ctx, err)
+	}
+
+	return rest.SuccessResponse(ctx, "category successfully deleted ", nil)
 }
 
 func (h *CatalogHandler) CreateProduct(ctx *fiber.Ctx) error {
