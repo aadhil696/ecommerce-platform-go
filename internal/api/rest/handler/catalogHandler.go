@@ -31,8 +31,8 @@ func SetupCatalogRoutes(rh *RestHandler) {
 
 	//public
 	//listing products and categories
-	app.Get("/products", catalogHandler.GetAProduct)
-	app.Get("/products/:id", catalogHandler.GetAllProducts)
+	app.Get("/products", catalogHandler.GetAllProducts)
+	app.Get("/products/:id", catalogHandler.GetAProduct)
 	app.Get("/categories", catalogHandler.GetAllCategories)
 	app.Get("/categories/:id", catalogHandler.GetACategory)
 
@@ -69,7 +69,7 @@ func (h *CatalogHandler) GetACategory(ctx *fiber.Ctx) error {
 	//Extract id from URL
 	id, err := strconv.Atoi(ctx.Params("id"))
 	if err != nil {
-		return rest.BadRequestError(ctx, "Invalid id parameter")
+		return rest.BadRequestError(ctx, "Invalid id parameter", err)
 	}
 
 	cat, err := h.svc.GetCategoryById(id)
@@ -81,13 +81,13 @@ func (h *CatalogHandler) GetACategory(ctx *fiber.Ctx) error {
 }
 
 func (h *CatalogHandler) CreateCategories(ctx *fiber.Ctx) error {
-	req := dto.CreateCategoryRequest{}
+	req := &dto.CreateCategoryRequest{}
 
-	if err := ctx.BodyParser(&req); err != nil {
-		return rest.BadRequestError(ctx, "create category invalid request")
+	if err := ctx.BodyParser(req); err != nil {
+		return rest.BadRequestError(ctx, "create category invalid request", err)
 	}
 
-	cat, err := h.svc.CreateCategories(&req)
+	cat, err := h.svc.CreateCategories(req)
 	if err != nil {
 		return rest.InternalError(ctx, err)
 	}
@@ -99,16 +99,16 @@ func (h *CatalogHandler) UpdateCategories(ctx *fiber.Ctx) error {
 	//Extract id from URL
 	id, err := strconv.Atoi(ctx.Params("id"))
 	if err != nil {
-		return rest.BadRequestError(ctx, "Invalid id parameter")
+		return rest.BadRequestError(ctx, "Invalid id parameter", err)
 	}
 
 	//Parse the body
-	req := dto.CreateCategoryRequest{}
-	if err := ctx.BodyParser(&req); err != nil {
-		return rest.BadRequestError(ctx, "invalid request for updating categories")
+	req := &dto.CreateCategoryRequest{}
+	if err := ctx.BodyParser(req); err != nil {
+		return rest.BadRequestError(ctx, "invalid request for updating categories", err)
 	}
 
-	updatedCat, err := h.svc.UpdateCategories(id, &req)
+	updatedCat, err := h.svc.UpdateCategories(id, req)
 	if err != nil {
 		return rest.InternalError(ctx, err)
 	}
@@ -120,7 +120,7 @@ func (h *CatalogHandler) DeleteCategories(ctx *fiber.Ctx) error {
 	//Extract id from URL
 	id, err := strconv.Atoi(ctx.Params("id"))
 	if err != nil {
-		return rest.BadRequestError(ctx, "Invalid id parameter")
+		return rest.BadRequestError(ctx, "Invalid id parameter", err)
 	}
 
 	if err := h.svc.DeleteCategories(id); err != nil {
@@ -130,26 +130,104 @@ func (h *CatalogHandler) DeleteCategories(ctx *fiber.Ctx) error {
 	return rest.SuccessResponse(ctx, "category successfully deleted ", nil)
 }
 
+// Product handler Implementation
 func (h *CatalogHandler) CreateProduct(ctx *fiber.Ctx) error {
-	return rest.SuccessResponse(ctx, "product created", nil)
+
+	req := &dto.CreateProductRequest{}
+	if err := ctx.BodyParser(req); err != nil {
+		return rest.BadRequestError(ctx, "Invalid request parameters", err)
+	}
+
+	//Getting current user for userid
+	user := h.svc.Auth.GetCurrentUser(ctx) 
+	prdct, err := h.svc.CreateProduct(user.ID, req)
+	if err != nil {
+		return rest.InternalError(ctx, err)
+	}
+
+	return rest.SuccessResponse(ctx, "product created successfully", prdct)
 }
 
 func (h *CatalogHandler) GetAllProducts(ctx *fiber.Ctx) error {
-	return rest.SuccessResponse(ctx, "product view", nil)
+
+	allprdcts, err := h.svc.GetAllProducts()
+	if err != nil {
+		return rest.InternalError(ctx, err)
+	}
+	return rest.SuccessResponse(ctx, "products list", allprdcts)
 }
 
 func (h *CatalogHandler) GetAProduct(ctx *fiber.Ctx) error {
-	return rest.SuccessResponse(ctx, "product based on id", nil)
+	//Extract id from URL params
+	id, err := strconv.Atoi(ctx.Params("id"))
+	if err != nil {
+		return rest.BadRequestError(ctx, "invalid parameter", err)
+	}
+
+	//Call service to get product using id
+	prdct, err := h.svc.FindProductById(id)
+	if err != nil {
+		return rest.InternalError(ctx, err)
+	}
+
+	return rest.SuccessResponse(ctx, "product based on id", prdct)
 }
 
 func (h *CatalogHandler) EditProduct(ctx *fiber.Ctx) error {
-	return rest.SuccessResponse(ctx, "product updation", nil)
+	//Extract Product id from URL params
+	prdctId, err := strconv.Atoi(ctx.Params("id"))
+	if err != nil {
+		return rest.BadRequestError(ctx, "invalid product id", err)
+	}
+
+	//Getting current userid for verifying product belongs to current seller
+	user := h.svc.Auth.GetCurrentUser(ctx)
+
+	req := &dto.CreateProductRequest{}
+	if err := ctx.BodyParser(req); err != nil {
+		return rest.BadRequestError(ctx, "invalid request body params", err)
+	}
+
+	updatedPrdct, err := h.svc.UpdateProduct(prdctId, req, &user)
+	if err != nil {
+		return rest.InternalError(ctx, err)
+	}
+
+	return rest.SuccessResponse(ctx, "product updated", updatedPrdct)
 }
 
 func (h *CatalogHandler) StockUpdate(ctx *fiber.Ctx) error {
-	return rest.SuccessResponse(ctx, "stock updation", nil)
+	//Extract Product id from URL params
+	id, err := strconv.Atoi(ctx.Params("id"))
+	if err != nil {
+		return rest.BadRequestError(ctx, "invalid product id", err)
+	}
+
+	req := &dto.UpdateStockRequest{}
+	if err := ctx.BodyParser(req); err != nil {
+		return rest.BadRequestError(ctx, "invalid update request", err)
+	}
+
+	//Getting current userid for verifying product belongs to current seller
+	user := h.svc.Auth.GetCurrentUser(ctx)
+	updated, err := h.svc.StockUpdate(id, req, user)
+	if err != nil {
+		return rest.InternalError(ctx, err)
+	}
+
+	return rest.SuccessResponse(ctx, "stock updated successfully", updated)
 }
 
 func (h *CatalogHandler) DeleteProduct(ctx *fiber.Ctx) error {
-	return rest.SuccessResponse(ctx, "product delete", nil)
+	//Extract Product id from URL params
+	id, err := strconv.Atoi(ctx.Params("id"))
+	if err != nil {
+		return rest.BadRequestError(ctx, "invalid product id", err)
+	}
+
+	if err := h.svc.DeleteProduct(id); err != nil {
+		return rest.InternalError(ctx, err)
+	}
+
+	return rest.SuccessResponse(ctx, "product deletion success", nil)
 }

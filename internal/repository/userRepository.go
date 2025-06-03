@@ -12,8 +12,8 @@ import (
 type UserRepository interface {
 	CreateUser(usr domain.User) (domain.User, error)
 	FindUser(email string) (domain.User, error)
-	FindUserbyID(id uint) (domain.User, error)
-	UpdateUser(id uint, usr domain.User) (domain.User, error)
+	FindUserbyID(id int) (domain.User, error)
+	UpdateUser(id int, usr domain.User) (domain.User, error)
 	AddBankAccount(e domain.BankAccount) error
 }
 
@@ -38,7 +38,7 @@ func (r *userRepository) CreateUser(usr domain.User) (domain.User, error) {
 		log.Println("User creation failed due to", result.Error)
 		return domain.User{}, result.Error
 	}
-	
+
 	return usr, nil
 }
 
@@ -61,7 +61,7 @@ func (r *userRepository) FindUser(email string) (domain.User, error) {
 	return user, nil
 }
 
-func (r *userRepository) FindUserbyID(id uint) (domain.User, error) {
+func (r *userRepository) FindUserbyID(id int) (domain.User, error) {
 	var user domain.User
 
 	result := r.db.Where("id=?", id).First(&user)
@@ -79,7 +79,7 @@ func (r *userRepository) FindUserbyID(id uint) (domain.User, error) {
 	return user, nil
 }
 
-func (r *userRepository) UpdateUser(id uint, usr domain.User) (domain.User, error) {
+func (r *userRepository) UpdateUser(id int, usr domain.User) (domain.User, error) {
 	var existingUser domain.User
 
 	//check if user with id exist

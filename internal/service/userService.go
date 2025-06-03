@@ -72,7 +72,7 @@ func (s *UserService) Login(input *dto.UserLogin) (string, error) {
 	return s.Auth.GenerateToken(user.ID, user.Email, user.UserType)
 }
 
-func (s *UserService) isVerified(id uint) bool {
+func (s *UserService) isVerified(id int) bool {
 
 	currentUser, err := s.Repo.FindUserbyID(id)
 
@@ -117,7 +117,7 @@ func (s *UserService) GetVerificationCode(e domain.User) (int, error) {
 	return code, nil
 }
 
-func (s *UserService) VerifyCode(id uint, code int) error {
+func (s *UserService) VerifyCode(id int, code int) error {
 	if s.isVerified(id) {
 		return errors.New("user already verified")
 	}
@@ -158,7 +158,7 @@ func (s *UserService) UpdateProfile(id uint, input any) error {
 	return nil
 }
 
-func (s *UserService) BecomeSeller(id uint, input dto.SellerInput) (string, error) {
+func (s *UserService) BecomeSeller(id int, input dto.SellerInput) (string, error) {
 	//find exisiting user
 	user, _ := s.Repo.FindUserbyID(id)
 

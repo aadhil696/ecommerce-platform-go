@@ -37,7 +37,7 @@ func (a Auth) CreateHashedPassword(p string) (string, error) {
 	return string(hashP), nil
 }
 
-func (a Auth) GenerateToken(id uint, email string, role string) (string, error) {
+func (a Auth) GenerateToken(id int, email string, role string) (string, error) {
 
 	if id == 0 || email == "" || role == "" {
 		return "", errors.New("required fields to generate token are missing")
@@ -104,7 +104,7 @@ func (a Auth) VerifyToken(t string) (domain.User, error) {
 		}
 
 		user := domain.User{}
-		user.ID = uint(claims["user_id"].(float64))
+		user.ID = int(claims["user_id"].(float64))
 		user.Email = claims["email"].(string)
 		user.UserType = claims["role"].(string)
 		return user, nil

@@ -5,10 +5,10 @@ type CreateProductRequest struct {
 	Price       float64 `json:"price"`
 	ImageUrl    string  `json:"imageurl"`
 	Description string  `json:"description"`
-	CategoryID  int     `json:"categoryid"`
-	Stock       int     `json:"stock"`
+	CategoryID  uint    `json:"categoryid"`
+	Stock       uint    `json:"stock"`
 }
 
 type UpdateStockRequest struct {
-	Stock int `json:"stock"`
+	Stock uint `json:"stock"`
 }
