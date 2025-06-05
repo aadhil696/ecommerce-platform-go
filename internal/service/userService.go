@@ -143,14 +143,27 @@ func (s *UserService) VerifyCode(id int, code int) error {
 	return nil
 }
 
-func (s *UserService) CreateProfile(id uint, input any) error {
+func (s *UserService) CreateProfile(id uint, input *dto.ProfileInput) error {
+
+	_, err := s.Repo.UpdateUser(int(id), domain.User{
+		FirstName: input.FirstName,
+		LastName:  input.LastName,
+	})
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
 
 func (s *UserService) GetProfile(id uint) (*domain.User, error) {
 
-	return &domain.User{}, nil
+	profile, err := s.Repo.FindUserbyID(int(id))
+	if err != nil {
+		return &domain.User{}, err
+	}
+
+	return &profile, nil
 }
 
 func (s *UserService) UpdateProfile(id uint, input any) error {

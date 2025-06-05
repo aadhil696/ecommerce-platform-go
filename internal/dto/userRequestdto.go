@@ -22,3 +22,9 @@ type SellerInput struct {
 	SwiftCode         string `json:"swiftcode"`
 	PaymentType       string `json:"paymenttype"`
 }
+
+type ProfileInput struct {
+	FirstName    string `json:"firstname"`
+	LastName     string `json:"lastname"`
+	AddressInput string `json:"addressinput"`
+}

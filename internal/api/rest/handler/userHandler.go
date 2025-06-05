@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"go-ecommerce-app/internal/api/rest"
 	"go-ecommerce-app/internal/dto"
 	"go-ecommerce-app/internal/repository"
 	"go-ecommerce-app/internal/service"
@@ -36,7 +37,7 @@ func SetupUserRoutes(rh *RestHandler) {
 
 	//Private endpoints
 	pvtRoutes.Post("/verify", userHandler.Verify)
-	pvtRoutes.Post("/verifycode", userHandler.GetVerificationCode)
+	pvtRoutes.Get("/verifycode", userHandler.GetVerificationCode)
 
 	pvtRoutes.Post("/profile", userHandler.CreateProfile)
 	pvtRoutes.Get("/profile", userHandler.GetProfile)
@@ -136,6 +137,19 @@ func (h *UserHandler) GetVerificationCode(ctx *fiber.Ctx) error {
 }
 
 func (h *UserHandler) CreateProfile(ctx *fiber.Ctx) error {
+
+	//Get current users details for profile creation
+	user := h.svc.Auth.GetCurrentUser(ctx)
+
+	req := &dto.ProfileInput{}
+	if err := ctx.BodyParser(req); err != nil {
+		return rest.BadRequestError(ctx, "invalid input parameters", err)
+	}
+
+	if err := h.svc.CreateProfile(uint(user.ID), req); err != nil {
+		return rest.InternalError(ctx, err)
+	}
+
 	return ctx.Status(http.StatusOK).JSON(&fiber.Map{
 		"message": "Profile created",
 	})
@@ -145,9 +159,16 @@ func (h *UserHandler) GetProfile(ctx *fiber.Ctx) error {
 
 	user := h.svc.Auth.GetCurrentUser(ctx)
 	log.Println(user)
+
+	//call service layer method to get current user profile
+	profile, err := h.svc.GetProfile(uint(user.ID))
+	if err != nil {
+		return rest.InternalError(ctx, err)
+	}
+	
 	return ctx.Status(http.StatusOK).JSON(&fiber.Map{
 		"message":     "Profile",
-		"userprofile": user,
+		"userprofile": profile,
 	})
 }
 
