@@ -8,6 +8,6 @@ type BankAccount struct {
 	BankAccount uint      `json:"bankaccount" gorm:"index;unique;not null"`
 	SwiftCode   string    `json:"swiftcode"`
 	PaymentType string    `json:"paymenttype"`
-	CreatedAt   time.Time `json:"createdAt" gorm:"default:current_timestamp"`
-	UpdatedAt   time.Time `json:"updatedAt" gorm:"default:current_timestamp"`
+	CreatedAt   time.Time `gorm:"default:current_timestamp"`
+	UpdatedAt   time.Time `gorm:"default:current_timestamp"`
 }

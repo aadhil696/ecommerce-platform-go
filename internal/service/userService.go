@@ -213,8 +213,13 @@ func (s *UserService) FindCart(id uint) ([]interface{}, error) {
 	return nil, nil
 }
 
-func (s *UserService) CreateCart(input any, u domain.User) ([]interface{}, error) {
+func (s *UserService) CreateCart(input *dto.CreateCartRequest, u domain.User) ([]interface{}, error) {
+	//Check if cart exist
+	//delete the cart
+	//update the cart
 
+	//create cart
+	
 	return nil, nil
 }
 

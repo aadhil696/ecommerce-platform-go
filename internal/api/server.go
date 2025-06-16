@@ -8,7 +8,6 @@ import (
 	"log"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cors"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -24,21 +23,25 @@ func StartServer(config configs.AppConfig) {
 	log.Println("Database connected successfully")
 
 	//Run AutoMigration
-	err = db.AutoMigrate(&domain.User{}, &domain.BankAccount{}, &domain.Category{}, &domain.Product{})
+	err = db.AutoMigrate(&domain.User{},
+		&domain.BankAccount{},
+		&domain.Category{},
+		&domain.Product{},
+		&domain.Cart{})
 	if err != nil {
 		log.Fatalf("Migration failed due to %s", err)
 	}
 
 	log.Println("Migration was successfull")
 
-	//cors configuration
-	c := cors.New(cors.Config{
-		AllowOrigins: "http://localhost:3000",
-		AllowHeaders: "Content-Type, Accept, Authorization",
-		AllowMethods: "GET, POST, PUT, PATCH, DELETE, OPTIONS",
-	})
+	// //cors configuration
+	// c := cors.New(cors.Config{
+	// 	AllowOrigins: "http://localhost:3000",
+	// 	AllowHeaders: "Content-Type, Accept, Authorization",
+	// 	AllowMethods: "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+	// })
 
-	app.Use(c)
+	// app.Use(c)
 
 	auth := helper.SetupAuth(config.AppSecret)
 

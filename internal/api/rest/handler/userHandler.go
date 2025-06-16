@@ -165,7 +165,7 @@ func (h *UserHandler) GetProfile(ctx *fiber.Ctx) error {
 	if err != nil {
 		return rest.InternalError(ctx, err)
 	}
-	
+
 	return ctx.Status(http.StatusOK).JSON(&fiber.Map{
 		"message":     "Profile",
 		"userprofile": profile,
@@ -173,6 +173,15 @@ func (h *UserHandler) GetProfile(ctx *fiber.Ctx) error {
 }
 
 func (h *UserHandler) AddToCart(ctx *fiber.Ctx) error {
+	//Getting current user
+	user := h.svc.Auth.GetCurrentUser(ctx)
+
+	req := &dto.CreateCartRequest{}
+	if err := ctx.BodyParser(req); err != nil {
+		return rest.BadRequestError(ctx, "invalid parameters", err)
+	}
+
+	h.svc.CreateCart(req, user)
 	return ctx.Status(http.StatusOK).JSON(&fiber.Map{
 		"message": "Added to cart",
 	})

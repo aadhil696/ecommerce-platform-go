@@ -7,6 +7,7 @@ import (
 	"log"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type UserRepository interface {
@@ -15,10 +16,69 @@ type UserRepository interface {
 	FindUserbyID(id int) (domain.User, error)
 	UpdateUser(id int, usr domain.User) (domain.User, error)
 	AddBankAccount(e domain.BankAccount) error
+
+	//Cart
+	CreateCart(input domain.Cart) error
+	FindCartItems(userId int) ([]*domain.Cart, error)
+	FindCartItem(userid int, prdctId int) (*domain.Cart, error)
+	UpdateCart(input domain.Cart) error
+	DeleteCart(userId int) error
 }
 
 type userRepository struct {
 	db *gorm.DB
+}
+
+func (r *userRepository) CreateCart(input domain.Cart) error {
+
+	result := r.db.Create(&input)
+	if result.Error != nil {
+		return fmt.Errorf("cart creation failed due to %v", result.Error)
+	}
+
+	return nil
+}
+
+func (r *userRepository) DeleteCart(userId int) error {
+
+	result := r.db.Delete(&domain.Cart{}, userId)
+	if result.Error != nil {
+		return fmt.Errorf("cart deletion failed due to %v", result.Error)
+	}
+
+	return nil
+}
+
+func (r *userRepository) FindCartItem(userid int, prdctId int) (*domain.Cart, error) {
+	var cartItem *domain.Cart
+	result := r.db.Where("user_id=? AND product_id=?", userid, prdctId).First(cartItem)
+	if result.Error != nil {
+		return &domain.Cart{}, fmt.Errorf("finding cart failed due to %v", result.Error)
+	}
+
+	return cartItem, nil
+}
+
+func (r *userRepository) FindCartItems(userId int) ([]*domain.Cart, error) {
+	var allCartItems []*domain.Cart
+
+	result := r.db.Where("user_id=?", userId).Find(allCartItems)
+	if result.Error != nil {
+		return []*domain.Cart{}, fmt.Errorf("finding cart failed due to %v", result.Error)
+	}
+
+	return allCartItems, nil
+}
+
+// UpdateCart implements UserRepository.
+func (r *userRepository) UpdateCart(input domain.Cart) error {
+	var cart domain.Cart
+	result := r.db.Model(&cart).Clauses(clause.Returning{}).Where("id=?", input.ID).Updates(input)
+	if result.Error != nil {
+		return fmt.Errorf("updating cart failed due to %v", result.Error)
+	}
+
+	return nil
 }
 
 // Addind bank account for seller feature
