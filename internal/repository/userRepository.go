@@ -22,28 +22,26 @@ type UserRepository interface {
 	FindCartItems(userId int) ([]*domain.Cart, error)
 	FindCartItem(userid int, prdctId int) (*domain.Cart, error)
 	UpdateCart(input domain.Cart) error
-	DeleteCart(userId int) error
+	DeleteCartItemByid(Id int) error
+	DeleteCartItems(userId int) error
 }
 
 type userRepository struct {
 	db *gorm.DB
 }
 
+func NewUserRepository(db *gorm.DB) UserRepository {
+	return &userRepository{
+		db: db,
+	}
+}
+
+// User Cart
 func (r *userRepository) CreateCart(input domain.Cart) error {
 
 	result := r.db.Create(&input)
 	if result.Error != nil {
 		return fmt.Errorf("cart creation failed due to %v", result.Error)
-	}
-
-	return nil
-}
-
-func (r *userRepository) DeleteCart(userId int) error {
-
-	result := r.db.Delete(&domain.Cart{}, userId)
-	if result.Error != nil {
-		return fmt.Errorf("cart deletion failed due to %v", result.Error)
 	}
 
 	return nil
@@ -70,12 +68,30 @@ func (r *userRepository) FindCartItems(userId int) ([]*domain.Cart, error) {
 	return allCartItems, nil
 }
 
-// UpdateCart implements UserRepository.
 func (r *userRepository) UpdateCart(input domain.Cart) error {
 	var cart domain.Cart
 	result := r.db.Model(&cart).Clauses(clause.Returning{}).Where("id=?", input.ID).Updates(input)
 	if result.Error != nil {
 		return fmt.Errorf("updating cart failed due to %v", result.Error)
+	}
+
+	return nil
+}
+func (r *userRepository) DeleteCartItemByid(Id int) error {
+
+	result := r.db.Delete(&domain.Cart{}, Id)
+	if result.Error != nil {
+		return fmt.Errorf("cart deletion failed due to %v", result.Error)
+	}
+
+	return nil
+}
+
+func (r *userRepository) DeleteCartItems(userId int) error {
+
+	result := r.db.Where("user_id=?", userId).Delete(&domain.Cart{})
+	if result.Error != nil {
+		return fmt.Errorf("user cart items deletion failed due to %v", result.Error)
 	}
 
 	return nil
@@ -86,11 +102,6 @@ func (r *userRepository) AddBankAccount(e domain.BankAccount) error {
 	return r.db.Create(&e).Error
 }
 
-func NewUserRepository(db *gorm.DB) UserRepository {
-	return &userRepository{
-		db: db,
-	}
-}
 func (r *userRepository) CreateUser(usr domain.User) (domain.User, error) {
 
 	result := r.db.Create(&usr) // Just use the input directly
