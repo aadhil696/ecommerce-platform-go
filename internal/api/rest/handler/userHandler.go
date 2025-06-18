@@ -181,10 +181,12 @@ func (h *UserHandler) AddToCart(ctx *fiber.Ctx) error {
 		return rest.BadRequestError(ctx, "invalid parameters", err)
 	}
 
-	h.svc.CreateCart(req, user)
-	return ctx.Status(http.StatusOK).JSON(&fiber.Map{
-		"message": "Added to cart",
-	})
+	cartItems, err := h.svc.CreateCart(req, user)
+	if err != nil {
+		return rest.InternalError(ctx, err)
+	}
+
+	return rest.SuccessResponse(ctx, "cart created", cartItems)
 }
 
 func (h *UserHandler) GetCart(ctx *fiber.Ctx) error {

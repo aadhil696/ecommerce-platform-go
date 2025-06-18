@@ -8,7 +8,7 @@ type Cart struct {
 	ProductId int       `json:"productid"`
 	Name      string    `json:"name"`
 	ImageUrl  string    `json:"imageurl"`
-	Price     string    `json:"price"`
+	Price     float64   `json:"price"`
 	Qty       int       `json:"qty"`
 	SellerId  int       `json:"sellerid"`
 	CreatedAt time.Time `gorm:"default:current_timestamp"`
