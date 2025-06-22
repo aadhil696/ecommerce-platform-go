@@ -144,9 +144,10 @@ func (s *UserService) VerifyCode(id int, code int) error {
 	return nil
 }
 
-func (s *UserService) CreateProfile(id uint, input *dto.ProfileInput) error {
+func (s *UserService) CreateProfile(id int, input *dto.ProfileInput) error {
 
-	_, err := s.Repo.UpdateUser(int(id), domain.User{
+	///update user firstname and lastname
+	_, err := s.Repo.UpdateUser(id, domain.User{
 		FirstName: input.FirstName,
 		LastName:  input.LastName,
 	})
@@ -154,20 +155,71 @@ func (s *UserService) CreateProfile(id uint, input *dto.ProfileInput) error {
 		return err
 	}
 
+	//createprofile
+	if err := s.Repo.CreateProfile(domain.Address{
+		AddressLine1: input.AddressInput.AddressLine1,
+		AddressLine2: input.AddressInput.AddressLine2,
+		City:         input.AddressInput.City,
+		PostCode:     input.AddressInput.PostCode,
+		Country:      input.AddressInput.Country,
+		UserID:       id,
+	}); err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (s *UserService) GetProfile(id uint) (*domain.User, error) {
+func (s *UserService) GetProfile(id uint) (*dto.UserProfileResponse, error) {
 
 	profile, err := s.Repo.FindUserbyID(int(id))
 	if err != nil {
-		return &domain.User{}, err
+		return nil, err
 	}
 
-	return &profile, nil
+	userProfile := dto.UserProfileResponse{
+		FirstName: profile.FirstName,
+		LastName:  profile.LastName,
+		Email:     profile.Email,
+		Phone:     profile.Phone,
+		UserType:  profile.UserType,
+		Address:   profile.Address,
+	}
+
+	return &userProfile, nil
 }
 
-func (s *UserService) UpdateProfile(id uint, input any) error {
+func (s *UserService) UpdateProfile(id int, input *dto.ProfileInput) error {
+	//Getting current user
+	user, err := s.Repo.FindUserbyID(id)
+	if err != nil {
+		return err
+	}
+
+	//firstname,lastname update check
+	if input.FirstName != "" {
+		user.FirstName = input.FirstName
+	}
+	if input.LastName != "" {
+		user.LastName = input.LastName
+	}
+
+	//update user with current firstname,lastname
+	_, err = s.Repo.UpdateUser(id, user)
+	if err != nil {
+		return err
+	}
+
+	//update profile address
+	if err := s.Repo.UpdateProfile(&domain.Address{
+		AddressLine1: input.AddressInput.AddressLine1,
+		AddressLine2: input.AddressInput.AddressLine2,
+		City:         user.Address.City,
+		Country:      input.AddressInput.Country,
+		PostCode:     input.AddressInput.PostCode,
+	}); err != nil {
+		return errors.New("profile addres updation failed")
+	}
 
 	return nil
 }
@@ -209,9 +261,15 @@ func (s *UserService) BecomeSeller(id int, input dto.SellerInput) (string, error
 	return token, err
 }
 
-func (s *UserService) FindCart(id uint) ([]interface{}, error) {
+func (s *UserService) FindCart(id uint) ([]*domain.Cart, error) {
 
-	return nil, nil
+	cart, err := s.Repo.FindCartItems(int(id))
+	if err != nil {
+		log.Infof("cart fetching failed at service layer %v", err)
+		return nil, errors.New("something went wrong while fetching cart")
+	}
+
+	return cart, nil
 }
 
 func (s *UserService) CreateCart(input *dto.CreateCartRequest, u domain.User) ([]*domain.Cart, error) {
@@ -231,13 +289,14 @@ func (s *UserService) CreateCart(input *dto.CreateCartRequest, u domain.User) ([
 		} else {
 			//update the cart
 			cart.Qty = int(input.Qty)
-			if err := s.Repo.CreateCart(*cart); err != nil {
+			if err := s.Repo.UpdateCart(*cart); err != nil {
 				//log error
 				return nil, errors.New("updating cart failed")
 			}
+			return s.Repo.FindCartItems(u.ID)
 		}
 	} else {
-		//check if product exist
+		//check if product exist for creating cart
 		product, err := s.CRepo.FindProductById(int(input.ProductId))
 		if err != nil {
 			return nil, errors.New("product not found to create cart item")
@@ -258,12 +317,24 @@ func (s *UserService) CreateCart(input *dto.CreateCartRequest, u domain.User) ([
 			log.Infof("cart creation error-%v", err)
 			return nil, errors.New("error on creating cart item")
 		}
+
 	}
 
 	return s.Repo.FindCartItems(u.ID)
 }
 
 func (s *UserService) CreateOrder(u domain.User) (int, error) {
+
+	//Get cart items of current user
+	cartItems, err := s.Repo.FindCartItems(u.ID)
+	if err != nil {
+		return 0, errors.New("could not find cart items")
+	}
+
+	//if above function return object with no item
+	if len(cartItems) == 0 {
+		return 0, errors.New("no items found")
+	}
 
 	return 0, nil
 }
