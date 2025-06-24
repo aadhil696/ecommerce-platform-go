@@ -47,4 +47,6 @@ type UserProfileResponse struct {
 	Address   domain.Address `json:"address"` //relation
 	Verified  bool           `json:"verified" gorm:"default:false"`
 	UserType  string         `json:"usertype" gorm:"default:buyer"`
+	Cart      domain.Cart    `json:"cart"`
+	Orders    []domain.Order `json:"orders"`
 }

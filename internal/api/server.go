@@ -28,7 +28,9 @@ func StartServer(config configs.AppConfig) {
 		&domain.Category{},
 		&domain.Product{},
 		&domain.Cart{},
-		&domain.Address{})
+		&domain.Address{},
+		&domain.Order{},
+		&domain.OrderItem{})
 	if err != nil {
 		log.Fatalf("Migration failed due to %s", err)
 	}

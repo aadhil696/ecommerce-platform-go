@@ -7,6 +7,7 @@ import (
 	"go-ecommerce-app/internal/service"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -225,24 +226,38 @@ func (h *UserHandler) CreateOrder(ctx *fiber.Ctx) error {
 	//Getting current user
 	user := h.svc.Auth.GetCurrentUser(ctx)
 
-	order, err := h.svc.CreateOrder(user)
+	orderRef, err := h.svc.CreateOrder(user)
 	if err != nil {
 		return rest.InternalError(ctx, err)
 	}
 
-	return rest.SuccessResponse(ctx, "order list-", order)
+	return rest.SuccessResponse(ctx, "order created successfully", orderRef)
 }
 
 func (h *UserHandler) Getorders(ctx *fiber.Ctx) error {
-	return ctx.Status(http.StatusOK).JSON(&fiber.Map{
-		"message": "Got orders",
-	})
+	//Getting current user
+	user := h.svc.Auth.GetCurrentUser(ctx)
+
+	orders, err := h.svc.GetOrders(user.ID)
+	if err != nil {
+		return rest.InternalError(ctx, err)
+	}
+
+	return rest.SuccessResponse(ctx, "placed orders list-", orders)
 }
 
 func (h *UserHandler) GetOrder(ctx *fiber.Ctx) error {
-	return ctx.Status(http.StatusOK).JSON(&fiber.Map{
-		"message": "Get order",
-	})
+	//Getting current user
+	user := h.svc.Auth.GetCurrentUser(ctx)
+	//Getting orderid
+	orderId, _ := strconv.Atoi(ctx.Params("id"))
+
+	order, err := h.svc.GetOrderById(uint(orderId), user.ID)
+	if err != nil {
+		return rest.InternalError(ctx, err)
+	}
+
+	return rest.SuccessResponse(ctx, "order fetched successfully", order)
 }
 
 func (h *UserHandler) BecomeSeller(ctx *fiber.Ctx) error {

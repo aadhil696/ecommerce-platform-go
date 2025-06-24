@@ -9,10 +9,9 @@ import (
 	"go-ecommerce-app/internal/helper"
 	"go-ecommerce-app/internal/repository"
 	"go-ecommerce-app/pkg/notification"
+	"log"
 	"strconv"
 	"time"
-
-	"github.com/gofiber/fiber/v2/log"
 )
 
 type UserService struct {
@@ -84,7 +83,7 @@ func (s *UserService) GetVerificationCode(e domain.User) (int, error) {
 
 	//if user already verified
 	if s.isVerified(e.ID) {
-		log.Info("1st")
+		log.Printf("1st")
 		return 0, errors.New("user already verified")
 	}
 
@@ -184,8 +183,9 @@ func (s *UserService) GetProfile(id uint) (*dto.UserProfileResponse, error) {
 		Phone:     profile.Phone,
 		UserType:  profile.UserType,
 		Address:   profile.Address,
+		Cart:      profile.Cart,
+		Orders:    profile.Orders,
 	}
-
 	return &userProfile, nil
 }
 
@@ -265,7 +265,7 @@ func (s *UserService) FindCart(id uint) ([]*domain.Cart, error) {
 
 	cart, err := s.Repo.FindCartItems(int(id))
 	if err != nil {
-		log.Infof("cart fetching failed at service layer %v", err)
+		log.Printf("cart fetching failed at service layer %v", err)
 		return nil, errors.New("something went wrong while fetching cart")
 	}
 
@@ -283,7 +283,7 @@ func (s *UserService) CreateCart(input *dto.CreateCartRequest, u domain.User) ([
 		if input.Qty < 1 {
 			//delete the cart
 			if err := s.Repo.DeleteCartItemByid(u.ID); err != nil {
-				log.Infof("error on deleting cart item %v", err)
+				log.Printf("error on deleting cart item %v", err)
 				return nil, errors.New("error on deleting cart item")
 			}
 		} else {
@@ -314,7 +314,7 @@ func (s *UserService) CreateCart(input *dto.CreateCartRequest, u domain.User) ([
 		})
 
 		if err != nil {
-			log.Infof("cart creation error-%v", err)
+			log.Printf("cart creation error-%v", err)
 			return nil, errors.New("error on creating cart item")
 		}
 
@@ -336,15 +336,60 @@ func (s *UserService) CreateOrder(u domain.User) (int, error) {
 		return 0, errors.New("no items found")
 	}
 
-	return 0, nil
+	//find success payment status
+	paymentId := "PAY12345"
+	txnId := "TXN12345"
+	orderRef, _ := helper.RandomNumbers(8)
+
+	//create order with generated OrderNumber
+	var amount float64
+	var orderItems []domain.OrderItem
+
+	for _, item := range cartItems {
+		amount += item.Price * float64(item.Qty)
+		orderItems = append(orderItems, domain.OrderItem{
+			ProductId: item.ProductId,
+			Name:      item.Name,
+			Price:     item.Price,
+			Qty:       item.Qty,
+			ImageUrl:  item.ImageUrl,
+			SellerId:  item.SellerId,
+		})
+	}
+	order := domain.Order{
+		UserId:         uint(u.ID),
+		PaymentId:      paymentId,
+		TransactionId:  txnId,
+		OrderRefNumber: orderRef,
+		Amount:         amount,
+		Items:          orderItems,
+	}
+	if err := s.Repo.CreateOrder(order); err != nil {
+		return 0, err
+	}
+
+	//Delete items from cart after order success
+	if err := s.Repo.DeleteCartItems(u.ID); err != nil {
+		return 0, err
+	}
+
+	return orderRef, nil
 }
 
-func (s *UserService) GetOrders(u domain.User) ([]interface{}, error) {
+func (s *UserService) GetOrders(userId int) ([]*domain.Order, error) {
 
-	return nil, nil
+	orders, err := s.Repo.FindOrders(userId)
+	if err != nil {
+		return nil, err
+	}
+	return orders, nil
 }
 
-func (s *UserService) GetOrderById(id uint) (*domain.User, error) {
+func (s *UserService) GetOrderById(orderId uint, userId int) (*domain.Order, error) {
 
-	return &domain.User{}, nil
+	order, err := s.Repo.FindOrderById(int(orderId), userId)
+	if err != nil {
+		return nil, err
+	}
+	return order, nil
 }
